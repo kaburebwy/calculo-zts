@@ -1,0 +1,69 @@
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit
+
+
+def calcular_Z(E, beta):
+    """Calcula a função de partição Z."""
+    return sum(np.exp(-beta * np.array(E)))
+
+
+def calcular_T(beta, k_B=1.38e-23):
+    """Calcula a temperatura T."""
+    return 1 / (beta * k_B)
+
+
+def calcular_S(Z, U, T, k_B=1.38e-23):
+    """Calcula a entropia S."""
+    return k_B * np.log(Z) + U / T
+
+
+def ajuste_beta(E, n):
+    """Ajusta a distribuição exponencial para encontrar beta."""
+
+    def modelo(E, A, beta):
+        return A * np.exp(-beta * E)
+
+    popt, _ = curve_fit(modelo, E, n, p0=[max(n), 0.1])
+    return popt[1]  # Retorna beta ajustado
+
+
+def ler_dados_csv(nome_arquivo):
+    """Lê os dados de um arquivo .csv e retorna listas de energia e ocorrências."""
+    df = pd.read_csv(nome_arquivo)
+    return df.iloc[:, 0].tolist(), df.iloc[:, 1].tolist()
+
+
+def main():
+    print("\nCálculo de Z, T e S para um sistema estatístico")
+
+    # Lendo dados do arquivo CSV
+    nome_arquivo = input("Digite o nome do arquivo .csv com os dados: ")
+    E, n = ler_dados_csv(nome_arquivo)
+
+    # Ajuste de beta a partir dos dados do histograma
+    beta = ajuste_beta(E, n)
+
+    # Cálculo da função de partição
+    Z = calcular_Z(E, beta)
+
+    # Cálculo da energia média U
+    U = sum(e * ni for e, ni in zip(E, n)) / sum(n)
+
+    # Cálculo da temperatura
+    T = calcular_T(beta)
+
+    # Cálculo da entropia
+    S = calcular_S(Z, U, T)
+
+    # Exibição dos resultados
+    print("\nResultados:")
+    print(f"Beta ajustado: {beta:.4f}")
+    print(f"Função de partição (Z): {Z:.4f}")
+    print(f"Temperatura (T): {T:.4e} K")
+    print(f"Entropia (S): {S:.4e} J/K")
+
+
+
+if __name__ == "__main__":
+    main() 
